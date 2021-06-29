@@ -1,0 +1,7 @@
+extra_fn_clean_exts:
+    - type: 'truncate'
+      pattern: '.host_removed.pair'
+
+custom_plot_config:
+    fastqc_per_base_sequence_quality_plot:
+        ymin : 30
