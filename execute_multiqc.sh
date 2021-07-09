@@ -12,7 +12,7 @@ set -eo pipefail
 multiqc_report() {
     # Arguments:
     # - out suffix
-    # - output directory 
+    # - output directory
     # - input files
     # - remaining options
 
@@ -24,26 +24,41 @@ multiqc_report() {
 
     # Output file
     mkdir -p "$output_dir"
+    if [[ "$output_dir" != "" ]]; then
+        output_tar="$output_dir"_tar
+    fi
+    mkdir -p "$output_tar"
 
     # Splitting the input files
     local input_list
     local input_args=()
     IFS=, read -r -a input_list <<< "$@"
-    for idir in "${input_list[@]}"; do
-        input_args+=("$idir")
+    for itar in "${input_list[@]}"; do
+        input_args+=("$itar")
+    done
+
+    # Unarchive tar inputs to tar directory
+    echo "Unarchiving tar files ...\n" | \
+    (tee ./multiqc_report.log >&2)
+
+    #  Loop on input files
+    for itar in "${input_args[@]}";
+    do
+        tar -xf "$itar" -C "$output_tar" \
+        2> >(tee -a ./multiqc_report.log >&2)
     done
 
     # The command
     echo multiqc -f --config /opt/multiqc-env/multiqc_config_plots.yaml \
     -n "$output_dir"/"$out_suffix" \
     -o "$output_dir" \
-    "${input_args[@]}" \
-    | (tee ./multiqc_report.log >&2)
+    "$output_tar" \
+    2> >(tee -a ./multiqc_report.log >&2)
 
     multiqc -f --config /opt/multiqc-env/multiqc_config_plots.yaml \
     -n "$output_dir"/"$out_suffix" \
     -o "$output_dir" \
-    "${input_args[@]}" \
+    "$output_tar" \
     2> >(tee -a ./multiqc_report.log >&2)
 
 }
